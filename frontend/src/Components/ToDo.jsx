@@ -6,14 +6,17 @@ export default function ToDo() {
   const [lastId, setLastId] = useState(0);
   const [isLoading, setLoading] = useState(true);
 
+  useEffect(() => {
+    setList();
+  }, []);
+
   async function saveById() {
-    await fetch("http://localhost:3005/api/planets", {
+    await fetch("http://localhost:3010/api/planets", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
       },
-      body: JSON.stringify({ id: lastId, name: input }),
+      body: JSON.stringify({ id: lastId, name: input, check: false }),
     });
     setInput("");
     setList();
@@ -23,7 +26,7 @@ export default function ToDo() {
 
   async function setList() {
     const response = await fetch(
-      "http://localhost:3005/api/planets",
+      "http://localhost:3010/api/planets",
       {
         method: "GET",
         headers: {
@@ -33,6 +36,7 @@ export default function ToDo() {
     );
     const content = await response.json();
     setLists([...content]);
+    console.log(content);
     setLoading(false);
     setLastId(Number(content[content.length - 1].id) + 1);
   }
@@ -40,7 +44,7 @@ export default function ToDo() {
   async function updateElement(id) {
     console.log("initated");
     const response = await fetch(
-      "http://localhost:3005/api/planets/" + id,
+      "http://localhost:3010/api/planets/" + id,
       {
         method: "PUT",
         headers: {
@@ -54,13 +58,9 @@ export default function ToDo() {
     setLoading(false);
   }
 
-  useEffect(() => {
-    setList();
-  }, []);
-
   async function deleteElement(id) {
     const response = await fetch(
-      "http://localhost:3005/api/planets/" + id,
+      "http://localhost:3010/api/planets/" + id,
       {
         method: "DELETE",
         headers: {
@@ -70,6 +70,26 @@ export default function ToDo() {
     );
     const content = await response.json();
     setLists([...content.planets]);
+    setLoading(false);
+  }
+
+  async function setFinished(id, check) {
+    const response = await fetch(
+      "http://localhost:3010/api/planets/checked/" + id,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: id,
+          check: check,
+        }),
+      }
+    );
+    const content = await response.json();
+    setLists([...content.planets]);
+    console.log(content.planets);
     setLoading(false);
   }
 
@@ -91,7 +111,10 @@ export default function ToDo() {
           return (
             <li key={i}>
               <ul>
-                {el.name} : {el.id}
+                {el.name} : {el.id} :{" "}
+                {!el.check === true
+                  ? "Not Finished Yet"
+                  : "Finished!"}
                 <button
                   onClick={() => deleteElement(el.id)}
                   style={{ marginLeft: "2rem" }}
@@ -103,6 +126,12 @@ export default function ToDo() {
                   style={{ marginLeft: "2rem" }}
                 >
                   Update
+                </button>
+                <button
+                  onClick={() => setFinished(el.id, el.check)}
+                  style={{ marginLeft: "2rem" }}
+                >
+                  Check
                 </button>
               </ul>
             </li>
